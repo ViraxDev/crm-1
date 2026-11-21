@@ -58,6 +58,10 @@ own login, not the AI Gateway. Local development only.
   attribute. The root agent's `turn.started` resolver (`chatModelEvents`) reads it from
   `auth.current` only, so a message without one keeps the conversation's model. Any
   member can choose it for their own chats; the workspace setting stays owner or admin.
+- **A conversation remembers its last choice** in `AgentConversation.agentModelId`:
+  the proxy writes it on create and on every send that names one, the builder writes
+  it with each submission. The composer starts from it, and "Workspace model" sends
+  the workspace id explicitly, so it is remembered too.
 - **A model id is checked before it reaches argv** (`CLAUDE_CODE_MODEL_PATTERN`): it
   cannot start with `-`, so a stored value never becomes a CLI flag.
 - **A missing `CLAUDE_CODE_PATH` falls back** to `DEFAULT_AGENT_MODEL` with a log

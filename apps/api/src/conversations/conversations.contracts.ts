@@ -277,6 +277,7 @@ export const conversationSummaryOutput = z.object({
 	title: z.string().nullable(),
 	messageCount: z.number(),
 	lastMessageAt: z.string(),
+	agentModelId: z.string().nullable(),
 });
 
 export const conversationListOutput = z.array(conversationSummaryOutput);
@@ -412,6 +413,7 @@ const conversationResumeOutput = z.object({
 
 export const builderConversationDetailOutput = z.object({
 	id: z.string(),
+	agentModelId: z.string().nullable(),
 	sessionId: z.string().nullable(),
 	continuationToken: z.string().nullable(),
 	streamIndex: z.number(),

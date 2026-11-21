@@ -149,6 +149,9 @@ function ThreadWithHistory({
 	onNewThread: () => void;
 }) {
 	const trpc = useTRPC();
+	const [agentModel, setAgentModel] = useState<string | null>(
+		conversation?.agentModelId ?? null,
+	);
 
 	const thread = useQuery<ThreadState>({
 		queryKey: ["agent-thread", conversation?.sessionId],
@@ -180,6 +183,8 @@ function ThreadWithHistory({
 			thread={
 				offline ? offlineThread((archive.data ?? []) as never) : thread.data
 			}
+			agentModel={agentModel}
+			onAgentModelChange={setAgentModel}
 			onNewThread={onNewThread}
 		/>
 	);
@@ -207,15 +212,18 @@ function Thread({
 	record,
 	conversation,
 	thread,
+	agentModel,
+	onAgentModelChange,
 	onNewThread,
 }: {
 	record: AgentRecord;
 	conversation: Conversation | null;
 	thread: ThreadState | undefined;
+	agentModel: string | null;
+	onAgentModelChange: (modelId: string | null) => void;
 	onNewThread: () => void;
 }) {
 	const copy = recordCopy(record.kind);
-	const [agentModel, setAgentModel] = useState<string | null>(null);
 	const agentModelRef = useRef(agentModel);
 	agentModelRef.current = agentModel;
 	const agent = useEveAgent({
@@ -317,7 +325,7 @@ function Thread({
 						tools={
 							<AgentModelPicker
 								value={agentModel}
-								onChange={setAgentModel}
+								onChange={onAgentModelChange}
 								disabled={busy}
 							/>
 						}

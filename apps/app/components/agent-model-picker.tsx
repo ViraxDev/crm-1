@@ -75,12 +75,12 @@ export function AgentModelPicker({
 		? [model.name, chosen?.effort ? EFFORT_LABELS[chosen.effort] : null]
 				.filter(Boolean)
 				.join(", ")
-		: "Conversation model";
+		: "Workspace model";
 
 	const choose = (next: CatalogModel | null) => {
 		setOpen(false);
 		if (!next) {
-			onChange(null);
+			onChange(workspace.data?.effectiveId ?? null);
 			return;
 		}
 		const keptEffort =
@@ -123,11 +123,13 @@ export function AgentModelPicker({
 						<CommandEmpty>No model matches that.</CommandEmpty>
 						<CommandGroup>
 							<CommandItem
-								value="conversation default"
-								data-checked={value === null}
+								value="workspace default"
+								data-checked={
+									value === null || value === workspace.data?.effectiveId
+								}
 								onSelect={() => choose(null)}
 							>
-								<span>Conversation model</span>
+								<span>Workspace model</span>
 								<span className="ml-auto text-muted-foreground text-xs">
 									{workspaceName}
 								</span>

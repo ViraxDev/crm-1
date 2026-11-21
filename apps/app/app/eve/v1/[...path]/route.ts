@@ -45,8 +45,10 @@ async function handler(request: Request): Promise<Response> {
 	const session = await getSession();
 	if (!session) return failure("Not signed in.", 401);
 
+	const agentModel = requestedModel(request.headers);
 	let record: RecordContext;
 	let builderConversation = false;
+	let recordConversationId: string | null = null;
 	if (route.kind === "create") {
 		const requested = recordFromHeaders(request.headers);
 		if (!requested) return failure("Name one CRM record.", 400);
@@ -73,6 +75,7 @@ async function handler(request: Request): Promise<Response> {
 			return failure("Conversation not found.", 404);
 		}
 		builderConversation = conversation.kind === "BUILDER";
+		recordConversationId = builderConversation ? null : conversation.id;
 		record = {
 			contactId: conversation.contactId ?? undefined,
 			companyId: conversation.companyId ?? undefined,
@@ -87,7 +90,7 @@ async function handler(request: Request): Promise<Response> {
 			name: session.user.name,
 		},
 		record,
-		requestedModel(request.headers),
+		agentModel,
 	)}`;
 
 	let body: string | null = null;
@@ -176,6 +179,7 @@ async function handler(request: Request): Promise<Response> {
 					sessionId: createdSessionId,
 					userId: session.user.id,
 					title: eveProxyMessageTitle(body),
+					agentModelId: agentModel,
 					...record,
 				},
 			});
@@ -183,6 +187,13 @@ async function handler(request: Request): Promise<Response> {
 			await cancelSession(createdSessionId, authorization);
 			return failure("The conversation could not be saved.", 500);
 		}
+	}
+
+	if (route.kind === "send" && agentModel && recordConversationId) {
+		await db.agentConversation.update({
+			where: { id: recordConversationId },
+			data: { agentModelId: agentModel },
+		});
 	}
 
 	return Response.json(response, {

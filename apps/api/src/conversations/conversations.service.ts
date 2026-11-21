@@ -96,6 +96,7 @@ export class ConversationsService {
 				title: true,
 				messageCount: true,
 				lastMessageAt: true,
+				agentModelId: true,
 			},
 		});
 
@@ -270,6 +271,7 @@ export class ConversationsService {
 			where: { id, userId, kind: "BUILDER" },
 			select: {
 				id: true,
+				agentModelId: true,
 				permissionMode: true,
 				sessionId: true,
 				continuationToken: true,
@@ -475,6 +477,7 @@ export class ConversationsService {
 				data: {
 					kind: "BUILDER",
 					userId,
+					agentModelId: input.agentModelId ?? null,
 					title: null,
 					lastReadAt: now,
 					lastMessageAt: now,
@@ -549,7 +552,11 @@ export class ConversationsService {
 
 				await tx.agentConversation.update({
 					where: { id: input.id },
-					data: { lastMessageAt: new Date(), lastReadAt: new Date() },
+					data: {
+						lastMessageAt: new Date(),
+						lastReadAt: new Date(),
+						agentModelId: input.agentModelId ?? undefined,
+					},
 				});
 
 				return created;

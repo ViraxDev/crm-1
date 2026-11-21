@@ -519,6 +519,7 @@ export function AgentBuilderChat({
 						) : (
 							<AgentComposer
 								mode="chat"
+								initialAgentModelId={data.agentModelId}
 								disabled={streamBusy}
 								busy={streamState.cancellable}
 								onStop={

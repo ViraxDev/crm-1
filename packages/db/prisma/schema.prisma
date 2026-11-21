@@ -669,6 +669,7 @@ model AgentConversation {
   pendingInputRequests Json?
 
   permissionMode AgentConversationPermissionMode @default(MANUAL)
+  agentModelId String?
 
   title        String?
   messageCount Int     @default(0)
