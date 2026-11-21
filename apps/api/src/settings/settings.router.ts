@@ -1,6 +1,14 @@
 import { Inject } from "@nestjs/common";
-import { Input, Mutation, Query, Router, UseMiddlewares } from "nestjs-trpc";
+import {
+	Ctx,
+	Input,
+	Mutation,
+	Query,
+	Router,
+	UseMiddlewares,
+} from "nestjs-trpc";
 import type { z } from "zod";
+import type { AuthedTrpcContext } from "../trpc/context.types";
 import { AuthMiddleware } from "../trpc/middlewares/auth.middleware";
 import { restMeta } from "../trpc/openapi";
 import {
@@ -43,7 +51,17 @@ export class SettingsRouter {
 		meta: restMeta("PATCH", "/settings/agent-model", ["Settings"]),
 	})
 	async setAgentModel(@Input() input: z.infer<typeof setAgentModelInput>) {
-		return this.settings.setAgentModel(input.modelId);
+		return this.settings.setAgentModel(input.modelId, input.effort);
+	}
+
+	@Mutation({
+		output: modelCatalogOutput,
+		meta: restMeta("POST", "/settings/claude-code-models/refresh", [
+			"Settings",
+		]),
+	})
+	async refreshClaudeCodeModels(@Ctx() ctx: AuthedTrpcContext) {
+		return this.settings.refreshClaudeCodeModels(ctx.user.id);
 	}
 
 	@Query({

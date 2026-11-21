@@ -6,6 +6,7 @@ import { AgentQueueService } from "./agent-queue.service";
 import { AgentRunsService } from "./agent-runs.service";
 import { AgentTriggerService } from "./agent-trigger.service";
 import { AgentsRouter } from "./agents.router";
+import { ClaudeCodeService } from "./claude-code.service";
 import { DispatchHeartbeatService } from "./dispatch-heartbeat.service";
 import { ResearchKeyService } from "./research-key.service";
 
@@ -18,6 +19,7 @@ import { ResearchKeyService } from "./research-key.service";
 		AgentRunsService,
 		AgentTriggerService,
 		AgentsRouter,
+		ClaudeCodeService,
 		DispatchHeartbeatService,
 		ResearchKeyService,
 	],
@@ -25,6 +27,7 @@ import { ResearchKeyService } from "./research-key.service";
 		AgentAccessService,
 		AgentTriggerService,
 		AgentQueueService,
+		ClaudeCodeService,
 		ResearchKeyService,
 	],
 })

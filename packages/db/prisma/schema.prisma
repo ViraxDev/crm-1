@@ -1437,6 +1437,8 @@ model AppSetting {
 
   agentModelContextWindow Int?
 
+  claudeCodeCatalog Json?
+
   contextDevApiKey String?
 
   reportingCurrency String?

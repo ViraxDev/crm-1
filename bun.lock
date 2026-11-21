@@ -17,6 +17,7 @@
       "name": "agent",
       "version": "0.0.1",
       "dependencies": {
+        "@ai-sdk/provider": "4.0.31",
         "@crm/auth": "workspace:*",
         "@crm/db": "workspace:*",
         "@crm/env": "workspace:*",

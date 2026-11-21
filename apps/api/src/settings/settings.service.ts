@@ -1,4 +1,12 @@
+import { isWorkspaceAdmin, workspaceRoleOf } from "@crm/auth/organization";
 import type { Db } from "@crm/db";
+import {
+	CLAUDE_CODE,
+	type ClaudeCodeEffort,
+	claudeCodeModelId,
+	parseClaudeCodeId,
+	splitAgentModelId,
+} from "@crm/db/claude-code";
 import {
 	DEFAULT_AGENT_MODEL,
 	maskKey,
@@ -9,7 +17,12 @@ import {
 	writeArchiveRetentionDays,
 	writeContextDevKey,
 } from "@crm/db/settings";
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	Logger,
+} from "@nestjs/common";
 import { ResearchKeyService } from "../agent/research-key.service";
 import { BackfillService } from "../backfill/backfill.service";
 import { InjectDatabase } from "../database/database.constants";
@@ -38,51 +51,70 @@ export class SettingsService {
 			this.db.appSetting.findFirst({ select: { updatedAt: true } }),
 		]);
 
+		const { baseId, effort } = splitAgentModelId(model.id);
+
 		return {
-			selectedId: model.isDefault ? null : model.id,
+			selectedId: model.isDefault ? null : baseId,
 			effectiveId: model.id,
 			defaultId: DEFAULT_AGENT_MODEL.id,
-			effective: await this.catalog.find(model.id),
+			effective: await this.catalog.find(baseId),
+			effort,
 			updatedAt: row?.updatedAt.toISOString() ?? null,
 		};
 	}
 
-	async setAgentModel(modelId: string | null): Promise<AgentModelSettings> {
+	async setAgentModel(
+		modelId: string | null,
+		effort: ClaudeCodeEffort | null,
+	): Promise<AgentModelSettings> {
 		if (modelId === null) {
 			await writeAgentModel(this.db, null);
 			this.logger.log({ message: "Agent model reset to the default" });
 			return this.agentModel();
 		}
 
-		const models = await this.catalog.models();
-
-		if (!models) {
-			throw new BadRequestException(
-				"Could not reach the AI Gateway to check that model. Try again in a moment.",
-			);
-		}
-
-		const chosen = models.find((model) => model.id === modelId);
-
+		const chosen = await this.catalog.find(modelId);
 		if (!chosen) {
 			throw new BadRequestException(
-				`The AI Gateway does not serve a tool-using model called "${modelId}".`,
+				`No tool-using model called "${modelId}" is available right now. Refresh the list and try again.`,
 			);
 		}
 
-		await writeAgentModel(this.db, {
-			id: chosen.id,
-			contextWindowTokens: chosen.contextWindowTokens,
-		});
+		if (effort && !chosen.efforts.includes(effort)) {
+			throw new BadRequestException(
+				`${chosen.name} does not support the "${effort}" effort.`,
+			);
+		}
 
-		this.logger.log({ message: "Agent model changed", modelId: chosen.id });
+		const local = parseClaudeCodeId(chosen.id);
+		const id = local ? claudeCodeModelId(local.model, effort) : chosen.id;
+		const contextWindowTokens =
+			(await this.catalog.contextWindowOf(chosen)) ??
+			CLAUDE_CODE.fallbackContextWindowTokens;
+
+		await writeAgentModel(this.db, { id, contextWindowTokens });
+
+		this.logger.log({
+			message: "Agent model changed",
+			modelId: id,
+			contextWindowTokens,
+		});
 
 		return this.agentModel();
 	}
 
+	async refreshClaudeCodeModels(userId: string): Promise<ModelCatalogResult> {
+		if (!isWorkspaceAdmin(await workspaceRoleOf(userId, this.db))) {
+			throw new ForbiddenException(
+				"Only an owner or an admin can refresh the Claude Code models.",
+			);
+		}
+
+		return this.catalog.catalog({ refresh: true });
+	}
+
 	async modelCatalog(): Promise<ModelCatalogResult> {
-		const models = await this.catalog.models();
-		return { models: models ?? [], available: models !== null };
+		return this.catalog.catalog();
 	}
 
 	async researchKey(): Promise<ResearchKeySettings> {

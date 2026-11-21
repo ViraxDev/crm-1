@@ -1,3 +1,4 @@
+import { CLAUDE_CODE_EFFORTS } from "@crm/db/claude-code";
 import {
 	MAX_ARCHIVE_RETENTION_DAYS,
 	MIN_ARCHIVE_RETENTION_DAYS,
@@ -8,8 +9,9 @@ export const catalogModelOutput = z.object({
 	id: z.string(),
 	name: z.string(),
 	provider: z.string(),
-	contextWindowTokens: z.number(),
+	contextWindowTokens: z.number().nullable(),
 	pricing: z.object({ input: z.number(), output: z.number() }).nullable(),
+	efforts: z.array(z.enum(CLAUDE_CODE_EFFORTS)),
 });
 
 export type CatalogModel = z.infer<typeof catalogModelOutput>;
@@ -19,6 +21,7 @@ export const agentModelOutput = z.object({
 	effectiveId: z.string(),
 	defaultId: z.string(),
 	effective: catalogModelOutput.nullable(),
+	effort: z.enum(CLAUDE_CODE_EFFORTS).nullable(),
 	updatedAt: z.string().nullable(),
 });
 
@@ -27,6 +30,13 @@ export type AgentModelSettings = z.infer<typeof agentModelOutput>;
 export const modelCatalogOutput = z.object({
 	models: z.array(catalogModelOutput),
 	available: z.boolean(),
+	gatewayAvailable: z.boolean(),
+	claudeCode: z.object({
+		enabled: z.boolean(),
+		refreshedAt: z.string().nullable(),
+		version: z.string().nullable(),
+		problem: z.string().nullable(),
+	}),
 });
 
 export type ModelCatalogResult = z.infer<typeof modelCatalogOutput>;
@@ -46,6 +56,7 @@ export type ArchiveRetentionSettings = z.infer<typeof archiveRetentionOutput>;
 
 export const setAgentModelInput = z.object({
 	modelId: z.string().trim().min(1).max(200).nullable(),
+	effort: z.enum(CLAUDE_CODE_EFFORTS).nullable().default(null),
 });
 
 export type SetAgentModelInput = z.infer<typeof setAgentModelInput>;
