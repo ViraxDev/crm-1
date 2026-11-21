@@ -12,7 +12,7 @@ import {
 	readClaudeCodeCatalog,
 } from "@crm/validation/claude-code-catalog";
 import type { LanguageModel } from "ai";
-import type { DynamicResolveContext } from "eve";
+import type { defineDynamic } from "eve";
 import { claudeCode } from "./claude-code";
 
 export interface ModelSelection {
@@ -96,24 +96,25 @@ export async function stepModelSelection(
 	};
 }
 
+type ResolverArgs = Parameters<
+	NonNullable<Parameters<typeof defineDynamic>[0]["events"]["session.started"]>
+>;
+
 type SessionModelResolver = (
-	event: unknown,
-	ctx: DynamicResolveContext,
+	...args: ResolverArgs
 ) => ModelSelection | Promise<ModelSelection>;
 
 export function modelEvents(session: SessionModelResolver) {
-	return {
-		"session.started": async (event: unknown, ctx: DynamicResolveContext) => {
-			const chosen = await session(event, ctx);
-			return modelSelection(chosen.model, chosen.modelContextWindowTokens);
-		},
-		...(claudeCodeBinary()
-			? {
-					"step.started": (_event: unknown, ctx: DynamicResolveContext) =>
-						stepModelSelection(ctx.model),
-				}
-			: {}),
+	const sessionStarted = async (...args: ResolverArgs) => {
+		const chosen = await session(...args);
+		return modelSelection(chosen.model, chosen.modelContextWindowTokens);
 	};
+	const stepStarted = (...[, ctx]: ResolverArgs) =>
+		stepModelSelection(ctx.model);
+
+	return claudeCodeBinary()
+		? { "session.started": sessionStarted, "step.started": stepStarted }
+		: { "session.started": sessionStarted };
 }
 
 export async function selectedModel(): Promise<ModelSelection> {

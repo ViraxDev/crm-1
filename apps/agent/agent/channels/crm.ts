@@ -68,8 +68,8 @@ const probeRequest = z
 	})
 	.catch({ model: null });
 
-function failureText(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+function failureText(cause: unknown): string {
+	return cause instanceof Error ? cause.message : String(cause);
 }
 
 const receiveTarget = z

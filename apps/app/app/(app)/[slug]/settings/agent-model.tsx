@@ -44,13 +44,13 @@ type CatalogModel = RouterOutputs["settings"]["modelCatalog"]["models"][number];
 
 const FOLLOW_DEFAULT = "__default__";
 
-const EFFORT_LABELS: Record<ClaudeCodeEffort, string> = {
+const EFFORT_LABELS = {
 	low: "Low",
 	medium: "Medium",
 	high: "High",
 	xhigh: "Extra high",
 	max: "Max",
-};
+} satisfies Record<ClaudeCodeEffort, string>;
 
 function perMillion(rate: number): string {
 	const dollars = rate * 1_000_000;

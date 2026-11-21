@@ -64,9 +64,12 @@ export class SettingsService {
 	}
 
 	async setAgentModel(
+		userId: string,
 		modelId: string | null,
 		effort: ClaudeCodeEffort | null,
 	): Promise<AgentModelSettings> {
+		await this.assertAdmin(userId, "change the agent model");
+
 		if (modelId === null) {
 			await writeAgentModel(this.db, null);
 			this.logger.log({ message: "Agent model reset to the default" });
@@ -104,13 +107,14 @@ export class SettingsService {
 	}
 
 	async refreshClaudeCodeModels(userId: string): Promise<ModelCatalogResult> {
-		if (!isWorkspaceAdmin(await workspaceRoleOf(userId, this.db))) {
-			throw new ForbiddenException(
-				"Only an owner or an admin can refresh the Claude Code models.",
-			);
-		}
-
+		await this.assertAdmin(userId, "refresh the Claude Code models");
 		return this.catalog.catalog({ refresh: true });
+	}
+
+	private async assertAdmin(userId: string, action: string): Promise<void> {
+		if (!isWorkspaceAdmin(await workspaceRoleOf(userId, this.db))) {
+			throw new ForbiddenException(`Only an owner or an admin can ${action}.`);
+		}
 	}
 
 	async modelCatalog(): Promise<ModelCatalogResult> {

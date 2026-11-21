@@ -26,7 +26,7 @@ const cliResult = z.object({
 	subtype: z.string(),
 	is_error: z.boolean(),
 	result: z.string().catch(""),
-	structured_output: z.unknown().optional(),
+	structured_output: z.json().optional().catch(undefined),
 	session_id: z.string().optional(),
 	usage: z
 		.object({

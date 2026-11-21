@@ -50,8 +50,15 @@ export class SettingsRouter {
 		output: agentModelOutput,
 		meta: restMeta("PATCH", "/settings/agent-model", ["Settings"]),
 	})
-	async setAgentModel(@Input() input: z.infer<typeof setAgentModelInput>) {
-		return this.settings.setAgentModel(input.modelId, input.effort);
+	async setAgentModel(
+		@Ctx() ctx: AuthedTrpcContext,
+		@Input() input: z.infer<typeof setAgentModelInput>,
+	) {
+		return this.settings.setAgentModel(
+			ctx.user.id,
+			input.modelId,
+			input.effort,
+		);
 	}
 
 	@Mutation({

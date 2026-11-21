@@ -37,19 +37,17 @@ const initializeResponse = z.object({
 		error: z.string().optional(),
 		response: z
 			.object({
-				models: z.array(z.unknown()).catch([]),
+				models: z.array(advertisedModel.nullable().catch(null)).catch([]),
 				claude_code_version: z.string().optional().catch(undefined),
 			})
 			.optional(),
 	}),
 });
 
-function catalogModel(entry: unknown): ClaudeCodeCatalogModel | null {
-	const parsed = advertisedModel.safeParse(entry);
-	if (!parsed.success) return null;
-
-	const model = parsed.data;
-	if (model.value === DEFAULT_ALIAS) return null;
+function catalogModel(
+	model: z.infer<typeof advertisedModel> | null,
+): ClaudeCodeCatalogModel | null {
+	if (!model || model.value === DEFAULT_ALIAS) return null;
 	if (!CLAUDE_CODE_MODEL_PATTERN.test(model.value)) return null;
 
 	return {

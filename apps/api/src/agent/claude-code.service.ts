@@ -24,8 +24,8 @@ type Discovery =
 const NO_BRIDGE =
 	"This install has no AGENT_BRIDGE_SECRET, so the agent cannot be asked.";
 
-function reasonOf(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+function reasonOf(cause: unknown): string {
+	return cause instanceof Error ? cause.message : String(cause);
 }
 
 @Injectable()
@@ -87,7 +87,7 @@ export class ClaudeCodeService {
 
 	private async post(
 		path: string,
-		body: object,
+		body: { model?: string },
 		timeoutMs: number,
 	): Promise<Response | null> {
 		const agent = bridge();
