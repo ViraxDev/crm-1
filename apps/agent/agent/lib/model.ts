@@ -6,7 +6,11 @@ import {
 	claudeCodeBinary,
 	parseClaudeCodeId,
 } from "@crm/db/claude-code";
-import { DEFAULT_AGENT_MODEL, readAgentModel } from "@crm/db/settings";
+import {
+	DEFAULT_AGENT_MODEL,
+	isAgentModelId,
+	readAgentModel,
+} from "@crm/db/settings";
 import {
 	type ClaudeCodeCatalog,
 	readClaudeCodeCatalog,
@@ -14,10 +18,16 @@ import {
 import type { LanguageModel } from "ai";
 import type { defineDynamic } from "eve";
 import { claudeCode } from "./claude-code";
+import { currentAttribute } from "./session-purpose";
 
 export interface ModelSelection {
 	model: string;
 	modelContextWindowTokens: number;
+}
+
+export interface TurnModelSelection {
+	model: string;
+	modelContextWindowTokens?: number;
 }
 
 export interface StepModelSelection {
@@ -75,6 +85,14 @@ export function modelSelection(
 	return { model: id, modelContextWindowTokens: contextWindowTokens };
 }
 
+async function claudeCodeWindow(model: string): Promise<number> {
+	const catalog = await cachedCatalog();
+	return (
+		catalog?.models.find((entry) => entry.model === model)
+			?.contextWindowTokens ?? CLAUDE_CODE.fallbackContextWindowTokens
+	);
+}
+
 export async function stepModelSelection(
 	current: { readonly id: string } | null,
 ): Promise<StepModelSelection> {
@@ -84,16 +102,45 @@ export async function stepModelSelection(
 	const binary = claudeCodeBinary();
 	if (!selection || !binary) return { model: current.id };
 
-	const catalog = await cachedCatalog();
-	const measured = catalog?.models.find(
-		(entry) => entry.model === selection.model,
-	)?.contextWindowTokens;
-
 	return {
 		model: claudeCode(selection, binary),
-		modelContextWindowTokens:
-			measured ?? CLAUDE_CODE.fallbackContextWindowTokens,
+		modelContextWindowTokens: await claudeCodeWindow(selection.model),
 	};
+}
+
+async function usableRequest(requested: string | null): Promise<string | null> {
+	if (!requested || !isAgentModelId(requested)) return null;
+	if (claudeCodeProblem(requested)) return null;
+
+	const local = parseClaudeCodeId(requested);
+	if (!local) return requested;
+
+	const listed = (await cachedCatalog())?.models.find(
+		(entry) => entry.model === local.model,
+	);
+	if (!listed) return null;
+	return !local.effort || listed.efforts.includes(local.effort)
+		? requested
+		: null;
+}
+
+export async function turnModelSelection(
+	requested: string | null,
+	current: { readonly id: string } | null,
+): Promise<TurnModelSelection> {
+	const id = (await usableRequest(requested)) ?? current?.id;
+	if (!id) return selectedModel();
+
+	const local = parseClaudeCodeId(id);
+	if (local) {
+		return {
+			model: id,
+			modelContextWindowTokens: await claudeCodeWindow(local.model),
+		};
+	}
+
+	const setting = await selectedModel();
+	return setting.model === id ? setting : { model: id };
 }
 
 type ResolverArgs = Parameters<
@@ -115,6 +162,13 @@ export function modelEvents(session: SessionModelResolver) {
 	return claudeCodeBinary()
 		? { "session.started": sessionStarted, "step.started": stepStarted }
 		: { "session.started": sessionStarted };
+}
+
+export function chatModelEvents(session: SessionModelResolver) {
+	const turnStarted = (...[, ctx]: ResolverArgs) =>
+		turnModelSelection(currentAttribute(ctx, "agentModel"), ctx.model);
+
+	return { ...modelEvents(session), "turn.started": turnStarted };
 }
 
 export async function selectedModel(): Promise<ModelSelection> {

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { LanguageModelV4CallOptions } from "@ai-sdk/provider";
 import { claudeCodeModelId, parseClaudeCodeId } from "@crm/db/claude-code";
+import { isAgentModelId } from "@crm/db/settings";
 import { claudeCode } from "../agent/lib/claude-code";
 import {
 	discoverClaudeCodeModels,
@@ -11,9 +12,11 @@ import {
 } from "../agent/lib/claude-code-catalog";
 import { buildRequest, parseReply } from "../agent/lib/claude-code-prompt";
 import {
+	chatModelEvents,
 	modelEvents,
 	modelSelection,
 	stepModelSelection,
+	turnModelSelection,
 } from "../agent/lib/model";
 
 const sonnet = { model: "sonnet", effort: "high" as const };
@@ -293,6 +296,45 @@ describe("modelSelection", () => {
 		await withCliPath(undefined, () => {
 			expect(Object.keys(modelEvents(session))).toEqual(["session.started"]);
 		});
+	});
+});
+
+describe("a model chosen in a chat", () => {
+	it("accepts gateway and Claude Code ids, and nothing that could be a flag", () => {
+		expect(isAgentModelId("zai/glm-5.2-fast")).toBe(true);
+		expect(isAgentModelId("claude-code/opus:high")).toBe(true);
+		expect(isAgentModelId("claude-code/sonnet[1m]")).toBe(true);
+		expect(isAgentModelId("--model")).toBe(false);
+		expect(isAgentModelId("claude-code/opus; rm -rf /")).toBe(false);
+	});
+
+	it("refuses a Claude Code model this machine does not list", () =>
+		withCliPath("/usr/bin/claude", async () => {
+			const turn = await turnModelSelection("claude-code/not-listed:low", {
+				id: "zai/glm-5.2-fast",
+			});
+			expect(turn.model).toBe("zai/glm-5.2-fast");
+		}));
+
+	it("keeps the conversation's model when the request is unusable", () =>
+		withCliPath(undefined, async () => {
+			expect(
+				(
+					await turnModelSelection("claude-code/haiku:low", {
+						id: "zai/glm-5.2-fast",
+					})
+				).model,
+			).toBe("zai/glm-5.2-fast");
+			expect(
+				(await turnModelSelection("not a model", { id: "zai/glm-5.2-fast" }))
+					.model,
+			).toBe("zai/glm-5.2-fast");
+		}));
+
+	it("adds a turn resolver to the chat agent only", () => {
+		const session = () => modelSelection("zai/glm-5.2-fast", 1);
+		expect(Object.keys(chatModelEvents(session))).toContain("turn.started");
+		expect(Object.keys(modelEvents(session))).not.toContain("turn.started");
 	});
 });
 

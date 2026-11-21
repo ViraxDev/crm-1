@@ -51,6 +51,13 @@ own login, not the AI Gateway. Local development only.
   system prompt and forces a `{ text, toolCalls }` reply with `--json-schema`; eve
   runs the calls as usual. The prompt says a direct call fails, because the model
   otherwise calls the tools natively, gets "No such tool available" and gives up.
+- **A chat can switch model and effort per message.** The record Agent tab sends
+  `x-crm-agent-model`; the app proxy checks it with `isAgentModelId` and signs it into
+  the bridge token as `agentModel`. A builder chat stores it on
+  `AgentConversationSubmission.agentModelId`, and the dispatch passes it as the same
+  attribute. The root agent's `turn.started` resolver (`chatModelEvents`) reads it from
+  `auth.current` only, so a message without one keeps the conversation's model. Any
+  member can choose it for their own chats; the workspace setting stays owner or admin.
 - **A model id is checked before it reaches argv** (`CLAUDE_CODE_MODEL_PATTERN`): it
   cannot start with `-`, so a stored value never becomes a CLI flag.
 - **A missing `CLAUDE_CODE_PATH` falls back** to `DEFAULT_AGENT_MODEL` with a log

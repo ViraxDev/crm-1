@@ -32,6 +32,13 @@ export function attribute(ctx: PurposeContext, key: string): string | null {
 	);
 }
 
+export function currentAttribute(
+	ctx: PurposeContext,
+	key: string,
+): string | null {
+	return attributeText.parse(ctx.session.auth.current?.attributes[key]);
+}
+
 export function requireAttribute(ctx: PurposeContext, key: string): string {
 	const value = attribute(ctx, key);
 	if (!value) throw new Error(`This session is missing ${key}.`);

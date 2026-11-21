@@ -155,6 +155,7 @@ export async function dispatchBuilderSubmission(
 				id: true,
 				commandType: true,
 				message: true,
+				agentModelId: true,
 				attemptCount: true,
 				attachments: {
 					orderBy: { position: "asc" },
@@ -203,6 +204,7 @@ export async function dispatchBuilderSubmission(
 						),
 						userId: submission.conversation.userId,
 						submissionId: submission.id,
+						agentModel: submission.agentModelId ?? "",
 					},
 				},
 				continuationToken: builderToken(conversationId),

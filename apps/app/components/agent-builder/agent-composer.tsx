@@ -35,9 +35,10 @@ import {
 	SquareIcon,
 	UserIcon,
 } from "lucide-react";
-import { type ReactNode, useReducer, useRef } from "react";
+import { type ReactNode, useReducer, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
+import { AgentModelPicker } from "@/components/agent-model-picker";
 import {
 	type BuilderCommandType,
 	builderCommandType,
@@ -75,6 +76,7 @@ export type BuilderPrompt<
 	message: string;
 	resources: BuilderResource[];
 	attachments: TAttachment[];
+	agentModelId: string | null;
 };
 
 export type BuilderComposerPrompt = BuilderPrompt<BuilderUploadAttachment>;
@@ -451,6 +453,7 @@ export function AgentComposer({
 		onSuccess: () => toast.success("Stop requested."),
 		onError: () => toast.error("The agent could not be stopped. Try again."),
 	});
+	const [agentModelId, setAgentModelId] = useState<string | null>(null);
 	const locked = disabled || submitAction.pending;
 	const canSend =
 		state.draft.trim().length > 0 && !locked && !state.attachmentsReading;
@@ -467,6 +470,7 @@ export function AgentComposer({
 			message,
 			resources: state.resources,
 			attachments: state.attachments,
+			agentModelId,
 		};
 		const key = JSON.stringify(prompt);
 		const pending = pendingSubmission.current;
@@ -533,6 +537,11 @@ export function AgentComposer({
 			<div className="flex h-7 items-center justify-between">
 				<div className="flex min-w-0 items-center gap-1">
 					{permissionControl}
+					<AgentModelPicker
+						value={agentModelId}
+						onChange={setAgentModelId}
+						disabled={locked}
+					/>
 					<ComposerTools
 						state={state}
 						resources={resourceResults.data ?? []}

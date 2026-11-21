@@ -748,6 +748,7 @@ model AgentConversationSubmission {
   inputRequestId  String?
   commandType     AgentConversationCommandType      @default(CHAT)
   message         Json
+  agentModelId    String?
   status          AgentConversationSubmissionStatus @default(PENDING)
   attemptCount    Int                               @default(0)
 

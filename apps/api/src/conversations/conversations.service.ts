@@ -484,6 +484,7 @@ export class ConversationsService {
 							clientRequestId: input.clientRequestId,
 							commandType: input.commandType,
 							message: this.builderMessage(input),
+							agentModelId: input.agentModelId ?? null,
 							attachments: {
 								create: this.attachmentWrites(input.attachments),
 							},
@@ -538,6 +539,7 @@ export class ConversationsService {
 						clientRequestId: input.clientRequestId,
 						commandType: input.commandType,
 						message: this.builderMessage(input),
+						agentModelId: input.agentModelId ?? null,
 						attachments: {
 							create: attachmentWrites,
 						},

@@ -1,4 +1,5 @@
 import { db } from "@crm/db";
+import { isAgentModelId } from "@crm/db/settings";
 import { connection } from "next/server";
 import { z } from "zod";
 import {
@@ -86,6 +87,7 @@ async function handler(request: Request): Promise<Response> {
 			name: session.user.name,
 		},
 		record,
+		requestedModel(request.headers),
 	)}`;
 
 	let body: string | null = null;
@@ -187,6 +189,11 @@ async function handler(request: Request): Promise<Response> {
 		status: upstream.status,
 		headers: eveProxyResponseHeaders(upstream.headers),
 	});
+}
+
+function requestedModel(headers: Headers): string | null {
+	const value = headers.get("x-crm-agent-model")?.trim();
+	return value && isAgentModelId(value) ? value : null;
 }
 
 function recordFromHeaders(headers: Headers): RecordContext | null {
