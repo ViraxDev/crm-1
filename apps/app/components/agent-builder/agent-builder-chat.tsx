@@ -519,6 +519,7 @@ export function AgentBuilderChat({
 						) : (
 							<AgentComposer
 								mode="chat"
+								initialAgentModelId={data.agentModelId}
 								disabled={streamBusy}
 								busy={streamState.cancellable}
 								onStop={
@@ -656,6 +657,7 @@ export function AgentBuilderChat({
 										message: "Continue with my request.",
 										resources: [],
 										attachments: [],
+										agentModelId: null,
 									})
 								}
 							/>
@@ -719,6 +721,7 @@ export function AgentBuilderChat({
 										message,
 										resources: [],
 										attachments: [],
+										agentModelId: null,
 									})
 								}
 							/>
@@ -1994,6 +1997,7 @@ function retryPromptOf(
 		message: message.text,
 		resources: message.resources,
 		attachments: message.attachments,
+		agentModelId: null,
 	};
 }
 

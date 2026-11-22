@@ -12,6 +12,13 @@ export const DEFAULT_AGENT_MODEL = {
 	contextWindowTokens: 1_000_000,
 } as const;
 
+export const AGENT_MODEL_ID_PATTERN =
+	/^[a-z0-9][a-z0-9-]{0,39}\/[A-Za-z0-9][A-Za-z0-9._[\]-]{0,119}(:[a-z]{1,10})?$/;
+
+export function isAgentModelId(value: string): boolean {
+	return AGENT_MODEL_ID_PATTERN.test(value);
+}
+
 export interface AgentModelSetting {
 	id: string;
 	contextWindowTokens: number;

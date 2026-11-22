@@ -674,6 +674,9 @@ const appRouter = t.router({
       .input(setAgentModelInput)
       .output(agentModelOutput)
       .mutation(async () => "PLACEHOLDER_DO_NOT_REMOVE" as any),
+    refreshClaudeCodeModels: publicProcedure
+      .output(modelCatalogOutput)
+      .mutation(async () => "PLACEHOLDER_DO_NOT_REMOVE" as any),
     researchKey: publicProcedure
       .output(researchKeyOutput)
       .query(async () => "PLACEHOLDER_DO_NOT_REMOVE" as any),

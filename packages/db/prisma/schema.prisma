@@ -669,6 +669,7 @@ model AgentConversation {
   pendingInputRequests Json?
 
   permissionMode AgentConversationPermissionMode @default(MANUAL)
+  agentModelId String?
 
   title        String?
   messageCount Int     @default(0)
@@ -748,6 +749,7 @@ model AgentConversationSubmission {
   inputRequestId  String?
   commandType     AgentConversationCommandType      @default(CHAT)
   message         Json
+  agentModelId    String?
   status          AgentConversationSubmissionStatus @default(PENDING)
   attemptCount    Int                               @default(0)
 
@@ -1436,6 +1438,8 @@ model AppSetting {
   agentModelId String?
 
   agentModelContextWindow Int?
+
+  claudeCodeCatalog Json?
 
   contextDevApiKey String?
 

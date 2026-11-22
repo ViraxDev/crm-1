@@ -22,6 +22,54 @@ agent and the API both need it.
 - **Not a frontier model, deliberately** — refusing wrong answers is enforced by the
   tools and evidence model, not model strength.
 
+### Local Claude Code
+
+`CLAUDE_CODE_PATH` lets the agent think with the `claude` CLI on this machine and its
+own login, not the AI Gateway. Local development only.
+
+- **The models are discovered, not listed in code.** `POST /internal/claude-code/models`
+  sends the CLI's `initialize` control request (no model call) and returns every model
+  it advertises with its effort levels. The API stores the result in
+  `AppSetting.claudeCodeCatalog` (`@crm/validation/claude-code-catalog`). The settings
+  page loads it once on its own; **Refresh the list** is owner or admin only.
+- **The context window is measured, not guessed.** The CLI does not advertise it.
+  The first time a model is chosen, `POST /internal/claude-code/probe` makes one tiny
+  call and reads `modelUsage.contextWindow`. The value is kept in the catalog and
+  survives a refresh. Unmeasured models fall back to
+  `CLAUDE_CODE.fallbackContextWindowTokens`.
+- **The effort lives in the id**: `claude-code/<model>` or `claude-code/<model>:<effort>`
+  (`parseClaudeCodeId`, `@crm/db/claude-code`). A team-agent version and an open
+  session therefore keep the effort they started with. It reaches the CLI as
+  `--effort`.
+- **The session selection stays a string.** eve refuses a live `LanguageModel` at
+  `session.started`. `lib/model.ts` adds a `step.started` resolver that turns a
+  `claude-code/*` id into the provider, and only when `CLAUDE_CODE_PATH` is set.
+- **One `claude -p` process per model step**, bare: no built-in tools, no setting
+  sources, no MCP, no session file, an empty working directory. At most
+  `CLAUDE_CODE.concurrency` run at once.
+- **Tools are prompted, not native.** `lib/claude-code-prompt.ts` lists them in the
+  system prompt and forces a `{ text, toolCalls }` reply with `--json-schema`; eve
+  runs the calls as usual. The prompt says a direct call fails, because the model
+  otherwise calls the tools natively, gets "No such tool available" and gives up.
+- **A chat can switch model and effort per message.** The record Agent tab sends
+  `x-crm-agent-model`; the app proxy checks it with `isAgentModelId` and signs it into
+  the bridge token as `agentModel`. A builder chat stores it on
+  `AgentConversationSubmission.agentModelId`, and the dispatch passes it as the same
+  attribute. The root agent's `turn.started` resolver (`chatModelEvents`) reads it from
+  `auth.current` only, so a message without one keeps the conversation's model. Any
+  member can choose it for their own chats; the workspace setting stays owner or admin.
+- **A conversation remembers its last choice** in `AgentConversation.agentModelId`:
+  the proxy writes it on create and on every send that names one, the builder writes
+  it with each submission. The composer starts from it, and "Workspace model" sends
+  the workspace id explicitly, so it is remembered too.
+- **A model id is checked before it reaches argv** (`CLAUDE_CODE_MODEL_PATTERN`): it
+  cannot start with `-`, so a stored value never becomes a CLI flag.
+- **A missing `CLAUDE_CODE_PATH` falls back** to `DEFAULT_AGENT_MODEL` with a log
+  line. Never throws.
+- **Organisation instructions still apply.** Claude Code appends managed policy
+  instructions to `--system-prompt`, so a managed account can change the reply
+  language.
+
 ## Pictures are copied, never linked
 
 `mirror()` copies bytes to Vercel Blob; the record points at our copy. Lives in

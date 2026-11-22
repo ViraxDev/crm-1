@@ -45,6 +45,7 @@
 	"overrides": {
 		"@better-auth/core": "1.7.7",
 		"@nestjs/swagger>js-yaml": "5.4.2",
+		"@prisma/config>effect": "3.22.1",
 		"auth>@mrleebo/prisma-ast": "0.16.0",
 		"eve>undici": "8.12.2",
 		"guarded-fetch>undici": "7.30.1",

@@ -7,6 +7,7 @@ import {
 	AgentTriggerType,
 	AgentVersionStatus,
 } from "@crm/db";
+import { AGENT_MODEL_ID_PATTERN } from "@crm/db/settings";
 import {
 	agentPermissionMode,
 	builderToolApproval,
@@ -127,6 +128,13 @@ const builderPromptShape = {
 	commandType: z.enum(["CHAT", "CREATE_AGENT"]).default("CHAT"),
 	message: z.string().trim().min(1).max(20_000),
 	resources: z.array(builderResource).max(20).default([]),
+	agentModelId: z
+		.string()
+		.trim()
+		.max(200)
+		.regex(AGENT_MODEL_ID_PATTERN)
+		.nullable()
+		.optional(),
 };
 
 export const builderConversationCreateInput = z.object({
@@ -269,6 +277,7 @@ export const conversationSummaryOutput = z.object({
 	title: z.string().nullable(),
 	messageCount: z.number(),
 	lastMessageAt: z.string(),
+	agentModelId: z.string().nullable(),
 });
 
 export const conversationListOutput = z.array(conversationSummaryOutput);
@@ -404,6 +413,7 @@ const conversationResumeOutput = z.object({
 
 export const builderConversationDetailOutput = z.object({
 	id: z.string(),
+	agentModelId: z.string().nullable(),
 	sessionId: z.string().nullable(),
 	continuationToken: z.string().nullable(),
 	streamIndex: z.number(),

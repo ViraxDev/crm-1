@@ -94,6 +94,10 @@ export class EnvironmentVariables {
 	REDIS_URL?: string;
 
 	@IsOptional()
+	@IsString()
+	CLAUDE_CODE_PATH?: string;
+
+	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
 	@Min(0)

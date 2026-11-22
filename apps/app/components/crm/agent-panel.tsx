@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { AgentClarificationComposer } from "@/components/agent-clarification-composer";
+import { AgentModelPicker } from "@/components/agent-model-picker";
 import {
 	type Conversation,
 	ConversationPicker,
@@ -148,6 +149,9 @@ function ThreadWithHistory({
 	onNewThread: () => void;
 }) {
 	const trpc = useTRPC();
+	const [agentModel, setAgentModel] = useState<string | null>(
+		conversation?.agentModelId ?? null,
+	);
 
 	const thread = useQuery<ThreadState>({
 		queryKey: ["agent-thread", conversation?.sessionId],
@@ -179,6 +183,8 @@ function ThreadWithHistory({
 			thread={
 				offline ? offlineThread((archive.data ?? []) as never) : thread.data
 			}
+			agentModel={agentModel}
+			onAgentModelChange={setAgentModel}
 			onNewThread={onNewThread}
 		/>
 	);
@@ -206,16 +212,25 @@ function Thread({
 	record,
 	conversation,
 	thread,
+	agentModel,
+	onAgentModelChange,
 	onNewThread,
 }: {
 	record: AgentRecord;
 	conversation: Conversation | null;
 	thread: ThreadState | undefined;
+	agentModel: string | null;
+	onAgentModelChange: (modelId: string | null) => void;
 	onNewThread: () => void;
 }) {
 	const copy = recordCopy(record.kind);
+	const agentModelRef = useRef(agentModel);
+	agentModelRef.current = agentModel;
 	const agent = useEveAgent({
-		headers: recordHeader(record),
+		headers: () => ({
+			...recordHeader(record),
+			"x-crm-agent-model": agentModelRef.current ?? "",
+		}),
 		...(thread && "session" in thread
 			? { initialSession: thread.session, initialEvents: eventsOf(thread) }
 			: { initialEvents: eventsOf(thread) }),
@@ -307,6 +322,13 @@ function Thread({
 					<ChatComposer
 						busy={busy}
 						disabled={locked}
+						tools={
+							<AgentModelPicker
+								value={agentModel}
+								onChange={onAgentModelChange}
+								disabled={busy}
+							/>
+						}
 						onSubmit={ask}
 						onValueChange={setDraft}
 						placeholder={copy.placeholder}
